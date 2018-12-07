@@ -16,11 +16,12 @@ async function getSearchList(url, actions){
     const page = await browser.newPage()
     await page.goto(url)
     var doFirst = await setUpSelectorAndParams(actions,page)
+
     // await page.waitForNavigation();
     // const handle = await doFirst.then(()=>{
     //     return page.$$eval('.news', e=>e.map((a)=>a.href))
     // })
-    const handle = await page.$$eval('.news', e=>e.map((a)=>a.href));
+    const handle = page.$$eval('.news', e=>e.map((a)=>a.href));
 
     console.log(handle);
     
@@ -68,7 +69,7 @@ async function callAction(action, selector, params, page){
 }
 
 
-function setUpSelectorAndParams(actions, page){
+async function setUpSelectorAndParams(actions, page){
     var p = [];
     for(let i = 0;i<actions.length ;i++){
         let selector, params;
@@ -91,12 +92,19 @@ function setUpSelectorAndParams(actions, page){
             }
         }
         console.log(actions[i][0]+ "   " + selector+ "   " +params)
+
+        if(params == 'submit'){
+            await Promise.all(p)
+        }
+        
         p.push(callAction(actions[i][0], selector, params, page))
     }
     // return new Promise(function(resolve, reject) {
     //         setTimeout(resolve(''),100)
     // })
-    return Promise.all(p)
+    var p1 = Promise.all(p)
+    //console.log(p1)
+    return p1
 }
 
 
@@ -104,9 +112,9 @@ function setUpSelectorAndParams(actions, page){
 getSearchList('http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_active_main_c.aspx',
 [
 ['type','#ctl00_txt_stock_code','1883'],
-['click','#ctl00_sel_tier_1',''],
+//['click','#ctl00_sel_tier_1',''],
 ['select','select#ctl00_sel_tier_1','1'],
-['click','img[src="/image/search_c.gif"]',''],
+['click','img[src="/image/search_c.gif"]','submit'],
 ['wait','','']
 ]
 );
