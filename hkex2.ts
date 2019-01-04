@@ -1,51 +1,82 @@
-const puppeteer = require('puppeteer')
-const screenshot = 'youtube_fm_dreams_video.png'
+import * as puppeteer from 'puppeteer'
 
 
 
-async function getSearchList(url, actions){
+interface IWriteData {
+    link: string
+    price: string | number
+    title: string
+    date: Date
+  }
+
+
+   async function getSearchList(url, actions){
     
-    //var count = Object.keys(action).length;
-
-    
-
-    //[{action:'type', selector:'#ctl00_txt_stock_code', paras:'1883'}]
-
+   
     const browser = await puppeteer.launch({
         headless : false
         })
     const page = await browser.newPage()
-    page
+   
+
     await page.goto(url)
-    var doFirst = await setUpSelectorAndParams(actions,page)
+    //var doFirst = await setUpSelectorAndParams(actions,page)
 
     //const handle = page.$$eval('.news', e=>e.map((a)=>a.href));
 
+    const writeDataList: IWriteData[] = []
 
-    //const handle = await page.$$eval('#main_wide_column2 > table > tbody', e=> e );
-    const handle = await page.$$('#main_wide_column2 > table > tbody')
-    var jsonH = await handle[0].getProperties()
-    console.log(jsonH);
-    const showPrice = handle.map(b =>
-        {
-            if (b.innerHTML){
-                return b.innerHTML
-            }else{
-                return b.innerText
+  
+    const list = await page.evaluate((writeDataList) => {
+
+        let itemListNode = document.getElementsByClassName("trade_listing")[0]
+
+        let itemList = itemListNode.getElementsByTagName("tr")
+
+        for (let item of Array.from(itemList)) {
+
+
+            let writeData: IWriteData = {
+                link: undefined,
+                title: undefined,
+                price: undefined,
+                date: undefined
             }
+    
+            // let img = item.querySelector('img')
+            // writeData.picture = img.src
+    
+            let link : HTMLAnchorElement = item.querySelector('td:nth-child(1) > a')
+            if (link){
+                writeData.link = link.href
+            }
+            
+    
+            let price : HTMLElement = item.querySelector('.tlist_price')
+
+            if (price){
+                writeData.price = price.innerText
+            }
+
+            
+            let title: HTMLAnchorElement = item.querySelector('.tlist_title')
+
+            if (title){
+                writeData.title = title.innerText
+            }
+
+            writeDataList.push(writeData)
         }
+        return writeDataList
+
+    },writeDataList
     )
-    console.log(showPrice);
+    
+    console.log(list)
 
-    //filter(a =>{
-//     a.innerHTML.includes('128')
-// })
+}
 
-//http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_active_main_c.aspx
 
-    //await browser.close()
-
-};
 
 
 async function callAction(action, selector, params, page){
@@ -124,15 +155,15 @@ async function setUpSelectorAndParams(actions, page){
 
 
 
-getSearchList('http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_active_main_c.aspx',
-[
-['type','#ctl00_txt_stock_code','1883'],
-//['click','#ctl00_sel_tier_1',''],
-['select','select#ctl00_sel_tier_1','1'],
-['click','img[src="/image/search_c.gif"]','submit'],
-['wait','','']
-]
-);
+// getSearchList('http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_active_main_c.aspx',
+// [
+// ['type','#ctl00_txt_stock_code','1883'],
+// //['click','#ctl00_sel_tier_1',''],
+// ['select','select#ctl00_sel_tier_1','1'],
+// ['click','img[src="/image/search_c.gif"]','submit'],
+// ['wait','','']
+// ]
+// );
 
 
 // getSearchList('https://www.dcfever.com/trading/search.php',
@@ -144,3 +175,10 @@ getSearchList('http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_
 // ['wait','','']
 // ]
 // );
+
+
+
+
+
+
+
