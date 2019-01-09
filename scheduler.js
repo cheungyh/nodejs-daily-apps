@@ -36,11 +36,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 var Cluster = require('puppeteer-cluster').Cluster;
+var puppeteer = require("puppeteer");
+var fs = require('fs');
 var searchFunction = require('./hkex2');
 var maxPage;
 var errorInInitalPage = 'aaaa';
 var log = console.log;
-function hi() {
+var writable = fs.createWriteStream(__dirname + '/EPC_result.txt');
+function setTaskAndRun() {
     return __awaiter(this, void 0, void 0, function () {
         var cluster, i;
         var _this = this;
@@ -57,6 +60,18 @@ function hi() {
                     cluster.on('taskerror', function (err, data) {
                         console.log("Error crawling " + data.url + ": " + err.message);
                     });
+                    console.log('maxPage befroe' + maxPage);
+                    return [4 /*yield*/, getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')];
+                case 2:
+                    _a.sent();
+                    console.log('maxPage after' + maxPage);
+                    if (maxPage.indexOf('...') >= 0) {
+                        maxPage = maxPage.substr(3);
+                        console.log(maxPage);
+                    }
+                    else if (!maxPage) {
+                        throw 'cannot find the max page on the search page';
+                    }
                     console.log('before task');
                     // Define a task (in this case: screenshot of page)
                     return [4 /*yield*/, cluster.task(function (_a) {
@@ -106,53 +121,40 @@ function hi() {
                                                 }, writeDataList)];
                                         case 2:
                                             list = _b.sent();
-                                            console.log('page num : ' + data.num);
-                                            console.log(list);
+                                            writable.write('page num : ' + data.num + '\n\n' + JSON.stringify(list) + '\n\n\n\n\n\n');
                                             return [2 /*return*/];
                                     }
                                 });
                             });
                         })];
-                case 2:
+                case 3:
                     // Define a task (in this case: screenshot of page)
                     _a.sent();
-                    // Add some pages to queue
                     console.log('before queue');
-                    // await cluster.queue(async ({ page }) => {
-                    //     await page.goto('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')
-                    //     maxPage = await page.evaluate(()=>{
-                    //         let target : HTMLElement = document.querySelector('.pagination > a:nth-last-child(2)')
-                    //         let x = target.innerText
-                    //         return x
-                    //     })
-                    //     console.log(maxPage)
-                    // }
-                    // )
-                    maxPage = 34;
                     i = 1;
-                    _a.label = 3;
-                case 3:
-                    if (!(i <= maxPage)) return [3 /*break*/, 6];
+                    _a.label = 4;
+                case 4:
+                    if (!(i <= maxPage)) return [3 /*break*/, 7];
                     return [4 /*yield*/, cluster.queue({
                             url: "https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell&min_price=&max_price=&page=" + i,
                             actions: '',
                             num: i
                         })];
-                case 4:
-                    _a.sent();
-                    _a.label = 5;
                 case 5:
-                    i++;
-                    return [3 /*break*/, 3];
+                    _a.sent();
+                    _a.label = 6;
                 case 6:
+                    i++;
+                    return [3 /*break*/, 4];
+                case 7:
                     console.log('before idle');
                     // Shutdown after everything is done
                     return [4 /*yield*/, cluster.idle()];
-                case 7:
+                case 8:
                     // Shutdown after everything is done
                     _a.sent();
                     return [4 /*yield*/, cluster.close()];
-                case 8:
+                case 9:
                     _a.sent();
                     console.log('down');
                     return [2 /*return*/];
@@ -160,4 +162,42 @@ function hi() {
         });
     });
 }
-hi();
+function getInitialPage(url) {
+    return __awaiter(this, void 0, void 0, function () {
+        var browser, page1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, puppeteer.launch({
+                        headless: false
+                    })];
+                case 1:
+                    browser = _a.sent();
+                    return [4 /*yield*/, browser.newPage()];
+                case 2:
+                    page1 = _a.sent();
+                    return [4 /*yield*/, page1.goto(url)];
+                case 3:
+                    _a.sent();
+                    return [4 /*yield*/, page1.evaluate(function () {
+                            var target = document.querySelector('.pagination > a:nth-last-child(2)');
+                            return target.innerText;
+                        })];
+                case 4:
+                    maxPage = _a.sent();
+                    return [4 /*yield*/, page1.close()];
+                case 5:
+                    _a.sent();
+                    return [4 /*yield*/, browser.close()];
+                case 6:
+                    _a.sent();
+                    return [2 /*return*/, new Promise(function (a, b) {
+                            a(maxPage);
+                        })];
+            }
+        });
+    });
+}
+// (async () =>{
+//     log(await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell').then(x => x) )
+// })()
+setTaskAndRun();

@@ -1,50 +1,13 @@
 const { Cluster } = require('puppeteer-cluster');
 import * as puppeteer from 'puppeteer'
+var fs = require('fs')
 
 const searchFunction = require('./hkex2')
 
 var maxPage;
 var errorInInitalPage = 'aaaa';
 var log = console.log
-
-
-// async function getInitalPage(url) {
-//     const browser = await puppeteer.launch({
-//     })
-//     const page1 = await browser.newPage()
-   
-
-//     await page1.goto(url)
-
-//     maxPage = await page1.evaluate(()=>{
-
-//         let target : HTMLElement = document.querySelector('.pagination > a:nth-last-child(2)')
-
-//         let x = target.innerText
-
-//         return x
-//     })
-
-//     // await page1.close();
-//     log('got the max page')
-//     return Promise.resolve('success');
-// }
-
-
-
-
-// getInitalPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell&min_price=&max_price=&page=1')
-// .then(
-// (x)=>{
-//     console.log(errorInInitalPage)
-//     console.log(x)
-// },
-// (y)=>{
-//     console.log(errorInInitalPage)      
-//     console.log(y)
-// }
-// )
-
+var writable = fs.createWriteStream(__dirname+'/EPC_result.txt')
 
 
 interface IWriteData {
@@ -54,7 +17,7 @@ interface IWriteData {
     date: Date
   }
 
-async function hi() {
+async function setTaskAndRun() {
     // Create a cluster with 2 workers
     const cluster = await Cluster.launch({
         concurrency: Cluster.CONCURRENCY_CONTEXT,
@@ -64,11 +27,30 @@ async function hi() {
 
 
     console.log('before on taskerror');
+
+
     cluster.on('taskerror', (err, data) => {
         console.log(`Error crawling ${data.url}: ${err.message}`);
     });
 
+
+    console.log('maxPage befroe' + maxPage)
+    
+
+    await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')
+
+    console.log('maxPage after' + maxPage)
+
+    if (maxPage.indexOf('...') >= 0 ){
+        maxPage = maxPage.substr(3)
+        console.log(maxPage)
+    }else if (!maxPage){
+        throw 'cannot find the max page on the search page'
+    }
+
     console.log('before task')
+
+
     // Define a task (in this case: screenshot of page)
     await cluster.task(async ({ page , data  }) => {
 
@@ -126,47 +108,19 @@ async function hi() {
     
         },writeDataList
         )
-        console.log('page num : ' + data.num)
-        console.log(list)
+
+        
+
+        writable.write('page num : ' + data.num + '\n\n' + JSON.stringify(list)+ '\n\n\n\n\n\n')
+        // console.log('page num : ' + data.num)
+        // console.log(list)
 
 
-        // await page.goto(abc);
-
-        // const path = abc.replace(/[^a-zA-Z]/g, '_') + '.png';
-        // await page.screenshot({ path });
-        // console.log(`Screenshot of ${abc} saved: ${path}`);
     });
 
-    // Add some pages to queue
     console.log('before queue')
 
-    // await cluster.queue(async ({ page }) => {
 
-    //     await page.goto('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')
-        
-    //     maxPage = await page.evaluate(()=>{
-
-    //         let target : HTMLElement = document.querySelector('.pagination > a:nth-last-child(2)')
-    
-    //         let x = target.innerText
-    
-    //         return x
-    //     })
-
-    //     console.log(maxPage)
-    // }
-    // )
-
-    maxPage = 34
-
-
-    // console.log('maxPage :' + maxPage)
-    // if (maxPage.indexOf('...') > 0 ){
-    //     maxPage = maxPage.substr(2)
-    //     console.log(maxPage)
-    // }else if (!maxPage){
-    //     throw 'cannot find the max page on the search page'
-    // }
 
     for(let i = 1; i <= maxPage ; i++){
 
@@ -186,4 +140,38 @@ async function hi() {
 }
 
 
-hi();
+
+
+async function getInitialPage(url) {
+    const browser = await puppeteer.launch({
+        headless : false
+    })
+    const page1 = await browser.newPage()
+   
+
+    await page1.goto(url)
+
+
+    maxPage = await page1.evaluate(()=>{
+        
+        let target : HTMLElement = document.querySelector('.pagination > a:nth-last-child(2)')
+
+        return target.innerText
+
+        
+    })
+
+    await page1.close()
+    await browser.close()
+
+    return new Promise((a,b) => {
+        a(maxPage)
+    })
+
+}
+
+// (async () =>{
+//     log(await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell').then(x => x) )
+// })()
+
+setTaskAndRun()
