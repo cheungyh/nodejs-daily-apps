@@ -1,8 +1,8 @@
 const { Cluster } = require('puppeteer-cluster');
 import * as puppeteer from 'puppeteer'
 var fs = require('fs')
+var initializer = require('./initializer')
 
-const searchFunction = require('./hkex2')
 
 var maxPage;
 var errorInInitalPage = 'aaaa';
@@ -15,8 +15,10 @@ interface IWriteData {
     price: string | number
     title: string
     date: Date
+
   }
 
+  
 async function setTaskAndRun() {
     // Create a cluster with 2 workers
     const cluster = await Cluster.launch({
@@ -36,10 +38,23 @@ async function setTaskAndRun() {
 
     console.log('maxPage befroe' + maxPage)
     
+    var loopingInfo = await initializer.getInitialPage(
+        [
+        ['type','#search_news > form > input[type="text"]:nth-child(3)','iphone'],
+        //['click','#ctl00_sel_tier_1',''],
+        ['select','#search_news > form > select:nth-child(6)','3'],
+        ['click','#search_news > form > input.grey','submit'],
+        ['wait','','']
+        ],
+        'https://www.dcfever.com/trading/search.php'
+        ,'.pagination > a:nth-last-child(2)'
+    ).then(x => x)
 
-    await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')
+
+    maxPage = loopingInfo.maxPage
 
     console.log('maxPage after' + maxPage)
+    console.log('loopingInfo url: ' + loopingInfo.url)
 
     if (maxPage.indexOf('...') >= 0 ){
         maxPage = maxPage.substr(3)
@@ -121,11 +136,10 @@ async function setTaskAndRun() {
     console.log('before queue')
 
 
-
     for(let i = 1; i <= maxPage ; i++){
 
         await cluster.queue({
-            url : `https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell&min_price=&max_price=&page=${i}`
+            url : `${loopingInfo.url}&page=${i}`
             ,actions : ''
             ,num : i
         }
@@ -137,41 +151,9 @@ async function setTaskAndRun() {
     await cluster.idle();
     await cluster.close();
     console.log('down')
-}
+}               
 
 
 
-
-async function getInitialPage(url) {
-    const browser = await puppeteer.launch({
-        headless : false
-    })
-    const page1 = await browser.newPage()
-   
-
-    await page1.goto(url)
-
-
-    maxPage = await page1.evaluate(()=>{
-        
-        let target : HTMLElement = document.querySelector('.pagination > a:nth-last-child(2)')
-
-        return target.innerText
-
-        
-    })
-
-    await page1.close()
-    await browser.close()
-
-    return new Promise((a,b) => {
-        a(maxPage)
-    })
-
-}
-
-// (async () =>{
-//     log(await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell').then(x => x) )
-// })()
 
 setTaskAndRun()

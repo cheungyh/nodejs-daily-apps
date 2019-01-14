@@ -36,8 +36,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 var Cluster = require('puppeteer-cluster').Cluster;
-var puppeteer = require("puppeteer");
 var fs = require('fs');
+var initializer = require('./initializer');
 var searchFunction = require('./hkex2');
 var maxPage;
 var errorInInitalPage = 'aaaa';
@@ -45,7 +45,7 @@ var log = console.log;
 var writable = fs.createWriteStream(__dirname + '/EPC_result.txt');
 function setTaskAndRun() {
     return __awaiter(this, void 0, void 0, function () {
-        var cluster, i;
+        var cluster, loopingInfo, i;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -61,10 +61,18 @@ function setTaskAndRun() {
                         console.log("Error crawling " + data.url + ": " + err.message);
                     });
                     console.log('maxPage befroe' + maxPage);
-                    return [4 /*yield*/, getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell')];
+                    return [4 /*yield*/, initializer.getInitialPage([
+                            ['type', '#search_news > form > input[type="text"]:nth-child(3)', 'iphone'],
+                            //['click','#ctl00_sel_tier_1',''],
+                            ['select', '#search_news > form > select:nth-child(6)', '3'],
+                            ['click', '#search_news > form > input.grey', 'submit'],
+                            ['wait', '', '']
+                        ], 'https://www.dcfever.com/trading/search.php', '.pagination > a:nth-last-child(2)').then(function (x) { return x; })];
                 case 2:
-                    _a.sent();
+                    loopingInfo = _a.sent();
+                    maxPage = loopingInfo.maxPage;
                     console.log('maxPage after' + maxPage);
+                    console.log('loopingInfo url: ' + loopingInfo.url);
                     if (maxPage.indexOf('...') >= 0) {
                         maxPage = maxPage.substr(3);
                         console.log(maxPage);
@@ -136,7 +144,7 @@ function setTaskAndRun() {
                 case 4:
                     if (!(i <= maxPage)) return [3 /*break*/, 7];
                     return [4 /*yield*/, cluster.queue({
-                            url: "https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell&min_price=&max_price=&page=" + i,
+                            url: loopingInfo.url + "&page=" + i,
                             actions: '',
                             num: i
                         })];
@@ -158,41 +166,6 @@ function setTaskAndRun() {
                     _a.sent();
                     console.log('down');
                     return [2 /*return*/];
-            }
-        });
-    });
-}
-function getInitialPage(url) {
-    return __awaiter(this, void 0, void 0, function () {
-        var browser, page1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, puppeteer.launch({
-                        headless: false
-                    })];
-                case 1:
-                    browser = _a.sent();
-                    return [4 /*yield*/, browser.newPage()];
-                case 2:
-                    page1 = _a.sent();
-                    return [4 /*yield*/, page1.goto(url)];
-                case 3:
-                    _a.sent();
-                    return [4 /*yield*/, page1.evaluate(function () {
-                            var target = document.querySelector('.pagination > a:nth-last-child(2)');
-                            return target.innerText;
-                        })];
-                case 4:
-                    maxPage = _a.sent();
-                    return [4 /*yield*/, page1.close()];
-                case 5:
-                    _a.sent();
-                    return [4 /*yield*/, browser.close()];
-                case 6:
-                    _a.sent();
-                    return [2 /*return*/, new Promise(function (a, b) {
-                            a(maxPage);
-                        })];
             }
         });
     });
