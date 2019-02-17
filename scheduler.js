@@ -38,13 +38,14 @@ exports.__esModule = true;
 var Cluster = require('puppeteer-cluster').Cluster;
 var fs = require('fs');
 var initializer = require('./initializer');
-var searchFunction = require('./hkex2');
 var maxPage;
 var errorInInitalPage = 'aaaa';
 var log = console.log;
 var writable = fs.createWriteStream(__dirname + '/EPC_result.txt');
+var fullSearchList = [];
 function setTaskAndRun() {
-    return __awaiter(this, void 0, void 0, function () {
+    var _this = this;
+    return new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
         var cluster, loopingInfo, i;
         var _this = this;
         return __generator(this, function (_a) {
@@ -61,16 +62,15 @@ function setTaskAndRun() {
                         console.log("Error crawling " + data.url + ": " + err.message);
                     });
                     console.log('maxPage befroe' + maxPage);
-                    return [4 /*yield*/, initializer.getInitialPage([
-                            ['type', '#search_news > form > input[type="text"]:nth-child(3)', 'iphone'],
-                            //['click','#ctl00_sel_tier_1',''],
-                            ['select', '#search_news > form > select:nth-child(6)', '3'],
-                            ['click', '#search_news > form > input.grey', 'submit'],
-                            ['wait', '', '']
-                        ], 'https://www.dcfever.com/trading/search.php', '.pagination > a:nth-last-child(2)').then(function (x) { return x; })];
+                    return [4 /*yield*/, initializer.getInitialPage([], 
+                        // 'https://www.dcfever.com/trading/listing.php?category=20'//電腦組合
+                        'https://www.dcfever.com/trading/listing.php?category=23', '.pagination > a:nth-last-child(2)').then(function (x) { return x; })
+                        //  maxPage = loopingInfo.maxPage
+                    ];
                 case 2:
                     loopingInfo = _a.sent();
-                    maxPage = loopingInfo.maxPage;
+                    //  maxPage = loopingInfo.maxPage
+                    maxPage = '15';
                     console.log('maxPage after' + maxPage);
                     console.log('loopingInfo url: ' + loopingInfo.url);
                     if (maxPage.indexOf('...') >= 0) {
@@ -85,29 +85,26 @@ function setTaskAndRun() {
                     return [4 /*yield*/, cluster.task(function (_a) {
                             var page = _a.page, data = _a.data;
                             return __awaiter(_this, void 0, void 0, function () {
-                                var writeDataList, list;
+                                var list;
                                 return __generator(this, function (_b) {
                                     switch (_b.label) {
                                         case 0: 
                                         // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-                                        return [4 /*yield*/, page.goto(data.url)
-                                            //var doFirst = await setUpSelectorAndParams(actions,page)
-                                            //const handle = page.$$eval('.news', e=>e.map((a)=>a.href));
-                                        ];
+                                        return [4 /*yield*/, page.goto(data.url)];
                                         case 1:
                                             // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
                                             _b.sent();
-                                            writeDataList = [];
-                                            return [4 /*yield*/, page.evaluate(function (writeDataList) {
+                                            return [4 /*yield*/, page.evaluate(function () {
                                                     var itemListNode = document.getElementsByClassName("trade_listing")[0];
                                                     var itemList = itemListNode.getElementsByTagName("tr");
+                                                    var writeDataList = [];
                                                     for (var _i = 0, _a = Array.from(itemList); _i < _a.length; _i++) {
                                                         var item = _a[_i];
                                                         var writeData = {
-                                                            link: undefined,
-                                                            title: undefined,
-                                                            price: undefined,
-                                                            date: undefined
+                                                            link: '',
+                                                            date: '',
+                                                            title: '',
+                                                            price: '12398765'
                                                         };
                                                         // let img = item.querySelector('img')
                                                         // writeData.picture = img.src
@@ -115,21 +112,28 @@ function setTaskAndRun() {
                                                         if (link) {
                                                             writeData.link = link.href;
                                                         }
-                                                        var price = item.querySelector('.tlist_price');
+                                                        //tbody > tr > td:nth-of-type(4)
+                                                        var price = item.querySelector('td:nth-child(4)');
                                                         if (price) {
                                                             writeData.price = price.innerText;
                                                         }
+                                                        //.tlist_title
+                                                        //'td:nth-child(3)'
                                                         var title = item.querySelector('.tlist_title');
                                                         if (title) {
                                                             writeData.title = title.innerText;
                                                         }
+                                                        var date = item.querySelector('td:nth-child(7)');
+                                                        if (date) {
+                                                            writeData.date = date.innerText;
+                                                        }
                                                         writeDataList.push(writeData);
                                                     }
                                                     return writeDataList;
-                                                }, writeDataList)];
+                                                })];
                                         case 2:
                                             list = _b.sent();
-                                            writable.write('page num : ' + data.num + '\n\n' + JSON.stringify(list) + '\n\n\n\n\n\n');
+                                            fullSearchList.push.apply(fullSearchList, list);
                                             return [2 /*return*/];
                                     }
                                 });
@@ -138,7 +142,6 @@ function setTaskAndRun() {
                 case 3:
                     // Define a task (in this case: screenshot of page)
                     _a.sent();
-                    console.log('before queue');
                     i = 1;
                     _a.label = 4;
                 case 4:
@@ -154,23 +157,46 @@ function setTaskAndRun() {
                 case 6:
                     i++;
                     return [3 /*break*/, 4];
-                case 7:
-                    console.log('before idle');
-                    // Shutdown after everything is done
-                    return [4 /*yield*/, cluster.idle()];
+                case 7: 
+                // console.log('before idle')
+                return [4 /*yield*/, cluster.idle()];
                 case 8:
-                    // Shutdown after everything is done
+                    // console.log('before idle')
                     _a.sent();
                     return [4 /*yield*/, cluster.close()];
                 case 9:
                     _a.sent();
-                    console.log('down');
+                    // console.log('down')
+                    resolve();
                     return [2 /*return*/];
             }
         });
-    });
+    }); });
 }
-// (async () =>{
-//     log(await getInitialPage('https://www.dcfever.com/trading/search.php?keyword=iphone&token=eppqpqpwqewppeqqr&cat=3&type=sell').then(x => x) )
-// })()
-setTaskAndRun();
+setTaskAndRun().then(function (a) {
+    var filteredList = fullSearchList.filter(function (x) {
+        // if (!x.link && !x.title)
+        // {return false}
+        // else if (x.title.match(/(等待確認|激活|維修|key|OEM)/gi))
+        // {return false}
+        // else if (x.title.match(/(DVD|光碟|CD|繁體|風扇|喇叭|中文版|線|讀.+器|火牛)/gi) && Number(x.price.replace('HK$','').replace(',',''))  <=  50 )
+        // {return false}
+        // else if (Number(x.price.replace('HK$','').replace(',',''))  <=  300)
+        // {return true}
+        // else if (Number(x.price.replace('HK$','').replace(',',''))  <=  400 && (x.title.match(/(i3|i5|4g|8g)/gi) !=null))
+        // {return true}
+        // else
+        // {return false}
+        if (!x.link && !x.title) {
+            return false;
+        }
+        else if (Number(x.price.replace('HK$', '').replace(',', '')) <= 250) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    });
+    // log(filteredList)
+    writable.write(JSON.stringify(filteredList));
+});
