@@ -14,6 +14,7 @@ interface IWriteData {
     link: string
     price: string 
     title: string
+    tradeStatus: string
     date: String
 
   }
@@ -46,29 +47,36 @@ var fullSearchList : IWriteData[]= []
         console.log('maxPage befroe' + maxPage)
 
         // var loopingInfo = await initializer.getInitialPage(
-        //     [
-        //     ['type','#search_news > form > input[type="text"]:nth-child(3)','iphone'],
-        //     //['click','#ctl00_sel_tier_1',''],
-        //     ['select','#search_news > form > select:nth-child(6)','3'],
-        //     ['click','#search_news > form > input.grey','submit'],
-        //     ['wait','','']
-        //     ],
+        // [
+        // ['type','#search_news > form > input[type="text"]:nth-child(3)','iphone'],
+        // //['click','#ctl00_sel_tier_1',''],
+        // ['select','#search_news > form > select:nth-child(6)','3'],
+        // ['click','#search_news > form > input.grey','submit'],
+        // ['wait','','']
+        // ],
         //     'https://www.dcfever.com/trading/search.php'
         //     ,'.pagination > a:nth-last-child(2)'
         // ).then(x => x)
 
         var loopingInfo = await initializer.getInitialPage(
-            [
-            ],
+            // [
+            //     ['type','#search_news > form > input[type="text"]:nth-child(3)','iphone'],
+            //     //['click','#ctl00_sel_tier_1',''],
+            //     ['select','#search_news > form > select:nth-child(6)','3'],
+            //     ['click','#search_news > form > input.grey','submit'],
+            //     ['wait','','']
+            // ],
+            [],
             // 'https://www.dcfever.com/trading/listing.php?category=20'//電腦組合
-            'https://www.dcfever.com/trading/listing.php?category=23'
-            ,'.pagination > a:nth-last-child(2)'
+            'https://www.dcfever.com/trading/listing.php?category=23',
+            // 'https://hk.carousell.com/'
+            ''
         ).then(x => x)
 
 
         //  maxPage = loopingInfo.maxPage
 
-         maxPage= '15'
+         maxPage= '12'
 
         console.log('maxPage after' + maxPage)
         console.log('loopingInfo url: ' + loopingInfo.url)
@@ -109,6 +117,7 @@ var fullSearchList : IWriteData[]= []
                         link: '',
                         date: '',
                         title: '',
+                        tradeStatus: '',
                         price: '12398765',
 
                     }
@@ -121,7 +130,7 @@ var fullSearchList : IWriteData[]= []
                         writeData.link = link.href
                     }
                     
-            //tbody > tr > td:nth-of-type(4)
+                    //tbody > tr > td:nth-of-type(4)
                     let price : HTMLElement = item.querySelector('td:nth-child(4)')
 
                     if (price){
@@ -135,6 +144,14 @@ var fullSearchList : IWriteData[]= []
                     if (title){
                         writeData.title = title.innerText
                     }
+
+                    //td:nth-child(3) > span
+                    let tradeStatus: HTMLAnchorElement = item.querySelector('td:nth-child(3) > span')
+
+                    if (tradeStatus){
+                        writeData.tradeStatus = tradeStatus.innerText
+                    }
+
 
                     let date: HTMLAnchorElement = item.querySelector('td:nth-child(7)')
 
@@ -186,7 +203,7 @@ setTaskAndRun().then(a =>{
         (x)=>{
             // if (!x.link && !x.title)
             // {return false}
-            // else if (x.title.match(/(等待確認|激活|維修|key|OEM)/gi))
+            // else if (x.title.match(/(等待確認|激活|維修|key|OEM|完成)/gi))
             // {return false}
             // else if (x.title.match(/(DVD|光碟|CD|繁體|風扇|喇叭|中文版|線|讀.+器|火牛)/gi) && Number(x.price.replace('HK$','').replace(',',''))  <=  50 )
             // {return false}
@@ -199,7 +216,15 @@ setTaskAndRun().then(a =>{
 
             if (!x.link && !x.title)
             {return false}
-            else if (Number(x.price.replace('HK$','').replace(',',''))  <=  250)
+            else if (x.tradeStatus.match(/(等待確認|完成)/gi))
+            {return false}
+            else if (Number(x.price.replace('HK$','').replace(',',''))  <=  49)
+            {return false}
+            else if (x.title.match(/(20|21|21|23)/gi) &&Number(x.price.replace('HK$','').replace(',',''))  <=  200)
+            {return true}
+            else if (x.title.match(/(24|25|26)/gi) &&Number(x.price.replace('HK$','').replace(',',''))  <=  250)
+            {return true}
+            else if (x.title.match(/(19|20)/gi) &&Number(x.price.replace('HK$','').replace(',',''))  <=  150)
             {return true}
             else
             {return false}
