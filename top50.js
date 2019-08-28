@@ -29,40 +29,18 @@ async function getSearchList(url, actions){
     // const next = await root.$('.DivFigureContent')
     // const rows = await next.$$('table > tbody')
     const rows = await page.$$('#DivContentLeft > div.DivFigureBox.shadow > div.DivFigureContent > table > tbody > *')
-    var abc = new Promise(async (resolve,reject)=>{
-            for( i = 1; i++ ;i < rows.length){
-                    let num = await rows[i].$eval('td:nth-child(2)',info => info.innerText )  
-                    let name = await rows[i].$eval('td:nth-child(3)',info => info.innerText )
-                    let unit = {num : num, name : name}
 
-                    // dataSet.push(new Promise(async (resolve,reject)=>{ resolve(unit) }))
-                    // Promise.all([title,price,description]).then(()=>{
-                    //     dataSet.push(title)
-                    //     dataSet.push(price)
-                    //     dataSet.push(description)
-                    //     resolve(dataSet)
-                    // })
-                    dataSet.push(unit)  
-            }
-            resolve()
-    })
+    for (const element of rows) {
+                let num = await element.$eval('td:nth-child(2)',info => info.innerText )  
+                let name = await element.$eval('td:nth-child(3)',info => info.innerText )
+                let unit = {num : num, name : name}
 
-    abc.then(x=>{console.log(dataSet)})
+                dataSet.push(unit)  
+              }
+ 
+            
 
-
-  
-    
-    
-
-
-    //filter(a =>{
-//     a.innerHTML.includes('128')
-// })
-
-//http://www.hkexnews.hk/listedco/listconews/advancedsearch/search_active_main_c.aspx
-
-    //await browser.close()
-
+    return dataSet;
 };
 
 
@@ -150,6 +128,6 @@ getSearchList('https://www.etnet.com.hk/www/tc/stocks/realtime/top50.php?subtype
 ['click','img[src="/image/search_c.gif"]','submit'],
 ['wait','','']
 ]
-);
+).then(x=>console.log(x))
 
 
