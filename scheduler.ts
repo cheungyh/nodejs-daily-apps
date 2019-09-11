@@ -104,9 +104,9 @@ var fullSearchList : IWriteData[]= []
         
             let list = await page.evaluate(() => {
 
-                let itemListNode = document.getElementsByClassName("trade_listing")[0]
+                let itemListNode = document.getElementsByClassName("item_list")[0]
 
-                let itemList = itemListNode.getElementsByTagName("tr")
+                let itemList = itemListNode.getElementsByTagName("li")
 
                 let  writeDataList : IWriteData[]= []
 
@@ -125,13 +125,13 @@ var fullSearchList : IWriteData[]= []
                     // let img = item.querySelector('img')
                     // writeData.picture = img.src
             
-                    let link : HTMLAnchorElement = item.querySelector('td:nth-child(1) > a')
+                    let link : HTMLAnchorElement = item.querySelector('a')
                     if (link){
                         writeData.link = link.href
                     }
                     
                     //tbody > tr > td:nth-of-type(4)
-                    let price : HTMLElement = item.querySelector('td:nth-child(4)')
+                    let price : HTMLElement = item.querySelector('a > .col_3 > .price')
 
                     if (price){
                         writeData.price = price.innerText
@@ -139,21 +139,21 @@ var fullSearchList : IWriteData[]= []
 
                     //.tlist_title
                     //'td:nth-child(3)'
-                    let title: HTMLAnchorElement = item.querySelector('.tlist_title')
+                    let title: HTMLAnchorElement = item.querySelector('a > .col_2 > .trade_title')
 
                     if (title){
                         writeData.title = title.innerText
                     }
 
                     //td:nth-child(3) > span
-                    let tradeStatus: HTMLAnchorElement = item.querySelector('td:nth-child(3) > span')
+                    let tradeStatus: HTMLAnchorElement = item.querySelector('.item_tag_confirmed')
 
                     if (tradeStatus){
                         writeData.tradeStatus = tradeStatus.innerText
                     }
 
 
-                    let date: HTMLAnchorElement = item.querySelector('td:nth-child(7)')
+                    let date: HTMLAnchorElement = item.querySelector('a > .col_4 > .misc')
 
                     if (date){
                         writeData.date = date.innerText
@@ -218,7 +218,7 @@ setTaskAndRun().then(a =>{
             {return false}
             else if (x.tradeStatus.match(/(等待確認|完成)/gi))
             {return false}
-            else if (Number(x.price.replace('HK$','').replace(',',''))  <=  49)
+            else if (Number(x.price.replace('HK$','').replace(',','').replace(' ',''))  <=  49)
             {return false}
             else if (x.title.match(/(20|21|21|23)/gi) &&Number(x.price.replace('HK$','').replace(',',''))  <=  200)
             {return true}

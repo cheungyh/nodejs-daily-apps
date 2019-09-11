@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -62,15 +63,25 @@ function setTaskAndRun() {
                         console.log("Error crawling " + data.url + ": " + err.message);
                     });
                     console.log('maxPage befroe' + maxPage);
-                    return [4 /*yield*/, initializer.getInitialPage([], 
+                    return [4 /*yield*/, initializer.getInitialPage(
+                        // [
+                        //     ['type','#search_news > form > input[type="text"]:nth-child(3)','iphone'],
+                        //     //['click','#ctl00_sel_tier_1',''],
+                        //     ['select','#search_news > form > select:nth-child(6)','3'],
+                        //     ['click','#search_news > form > input.grey','submit'],
+                        //     ['wait','','']
+                        // ],
+                        [], 
                         // 'https://www.dcfever.com/trading/listing.php?category=20'//電腦組合
-                        'https://www.dcfever.com/trading/listing.php?category=23', '.pagination > a:nth-last-child(2)').then(function (x) { return x; })
+                        'https://www.dcfever.com/trading/listing.php?category=23', 
+                        // 'https://hk.carousell.com/'
+                        '').then(function (x) { return x; })
                         //  maxPage = loopingInfo.maxPage
                     ];
                 case 2:
                     loopingInfo = _a.sent();
                     //  maxPage = loopingInfo.maxPage
-                    maxPage = '15';
+                    maxPage = '12';
                     console.log('maxPage after' + maxPage);
                     console.log('loopingInfo url: ' + loopingInfo.url);
                     if (maxPage.indexOf('...') >= 0) {
@@ -95,8 +106,8 @@ function setTaskAndRun() {
                                             // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
                                             _b.sent();
                                             return [4 /*yield*/, page.evaluate(function () {
-                                                    var itemListNode = document.getElementsByClassName("trade_listing")[0];
-                                                    var itemList = itemListNode.getElementsByTagName("tr");
+                                                    var itemListNode = document.getElementsByClassName("item_list")[0];
+                                                    var itemList = itemListNode.getElementsByTagName("li");
                                                     var writeDataList = [];
                                                     for (var _i = 0, _a = Array.from(itemList); _i < _a.length; _i++) {
                                                         var item = _a[_i];
@@ -104,26 +115,32 @@ function setTaskAndRun() {
                                                             link: '',
                                                             date: '',
                                                             title: '',
+                                                            tradeStatus: '',
                                                             price: '12398765'
                                                         };
                                                         // let img = item.querySelector('img')
                                                         // writeData.picture = img.src
-                                                        var link = item.querySelector('td:nth-child(1) > a');
+                                                        var link = item.querySelector('a');
                                                         if (link) {
                                                             writeData.link = link.href;
                                                         }
                                                         //tbody > tr > td:nth-of-type(4)
-                                                        var price = item.querySelector('td:nth-child(4)');
+                                                        var price = item.querySelector('a > .col_3 > .price');
                                                         if (price) {
                                                             writeData.price = price.innerText;
                                                         }
                                                         //.tlist_title
                                                         //'td:nth-child(3)'
-                                                        var title = item.querySelector('.tlist_title');
+                                                        var title = item.querySelector('a > .col_2 > .trade_title');
                                                         if (title) {
                                                             writeData.title = title.innerText;
                                                         }
-                                                        var date = item.querySelector('td:nth-child(7)');
+                                                        //td:nth-child(3) > span
+                                                        var tradeStatus = item.querySelector('.item_tag_confirmed');
+                                                        if (tradeStatus) {
+                                                            writeData.tradeStatus = tradeStatus.innerText;
+                                                        }
+                                                        var date = item.querySelector('a > .col_4 > .misc');
                                                         if (date) {
                                                             writeData.date = date.innerText;
                                                         }
@@ -177,7 +194,7 @@ setTaskAndRun().then(function (a) {
     var filteredList = fullSearchList.filter(function (x) {
         // if (!x.link && !x.title)
         // {return false}
-        // else if (x.title.match(/(等待確認|激活|維修|key|OEM)/gi))
+        // else if (x.title.match(/(等待確認|激活|維修|key|OEM|完成)/gi))
         // {return false}
         // else if (x.title.match(/(DVD|光碟|CD|繁體|風扇|喇叭|中文版|線|讀.+器|火牛)/gi) && Number(x.price.replace('HK$','').replace(',',''))  <=  50 )
         // {return false}
@@ -190,7 +207,19 @@ setTaskAndRun().then(function (a) {
         if (!x.link && !x.title) {
             return false;
         }
-        else if (Number(x.price.replace('HK$', '').replace(',', '')) <= 250) {
+        else if (x.tradeStatus.match(/(等待確認|完成)/gi)) {
+            return false;
+        }
+        else if (Number(x.price.replace('HK$', '').replace(',', '').replace(' ', '')) <= 49) {
+            return false;
+        }
+        else if (x.title.match(/(20|21|21|23)/gi) && Number(x.price.replace('HK$', '').replace(',', '')) <= 200) {
+            return true;
+        }
+        else if (x.title.match(/(24|25|26)/gi) && Number(x.price.replace('HK$', '').replace(',', '')) <= 250) {
+            return true;
+        }
+        else if (x.title.match(/(19|20)/gi) && Number(x.price.replace('HK$', '').replace(',', '')) <= 150) {
             return true;
         }
         else {
