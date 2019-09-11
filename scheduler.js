@@ -136,7 +136,7 @@ function setTaskAndRun() {
                                                             writeData.title = title.innerText;
                                                         }
                                                         //td:nth-child(3) > span
-                                                        var tradeStatus = item.querySelector('.item_tag_confirmed');
+                                                        var tradeStatus = item.querySelector('.item_tag.confirmed');
                                                         if (tradeStatus) {
                                                             writeData.tradeStatus = tradeStatus.innerText;
                                                         }

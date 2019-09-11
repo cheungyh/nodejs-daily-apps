@@ -146,7 +146,7 @@ var fullSearchList : IWriteData[]= []
                     }
 
                     //td:nth-child(3) > span
-                    let tradeStatus: HTMLAnchorElement = item.querySelector('.item_tag_confirmed')
+                    let tradeStatus: HTMLAnchorElement = item.querySelector('.item_tag.confirmed')
 
                     if (tradeStatus){
                         writeData.tradeStatus = tradeStatus.innerText
