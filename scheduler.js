@@ -207,7 +207,7 @@ setTaskAndRun().then(function (a) {
         if (!x.link && !x.title) {
             return false;
         }
-        else if (x.tradeStatus.match(/(等待確認|完成)/gi)) {
+        else if (x.tradeStatus.match(/(等待確認|交易完成)/gi)) {
             return false;
         }
         else if (Number(x.price.replace('HK$', '').replace(',', '').replace(' ', '')) <= 49) {
